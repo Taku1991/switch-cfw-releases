@@ -1,0 +1,71 @@
+name: CFW Release Monitor & Combiner
+
+on:
+  schedule:
+    # Läuft alle 12 Stunden
+    - cron: '0 */12 * * *'
+  workflow_dispatch: # Manueller Trigger
+  
+env:
+  REPO1: "Atmosphere-NX/Atmosphere"
+  REPO2: "CTCaer/hekate"
+  REPO3: "exelix11/SysDVR"
+  REPO4: "Lusamine/ldn_mitm"
+  REPO5: "bdawg1989/sys-botbase"
+  REPO6: "mtheall/ftpd"
+  REPO7: "J-D-K/JKSV"
+
+jobs:
+  check-and-combine-releases:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install Dependencies
+      run: |
+        pip install requests PyGithub python-dotenv
+        
+    - name: Check for new releases
+      id: check_releases
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        python scripts/check_releases.py
+        
+    - name: Download and combine releases
+      if: steps.check_releases.outputs.new_release == 'true'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        CFW_VERSION: ${{ steps.check_releases.outputs.cfw_version }}
+        BOOTLOADER_VERSION: ${{ steps.check_releases.outputs.bootloader_version }}
+        SYSDVR_VERSION: ${{ steps.check_releases.outputs.sysdvr_version }}
+        LDN_MITM_VERSION: ${{ steps.check_releases.outputs.ldn_mitm_version }}
+        SYS_BOTBASE_VERSION: ${{ steps.check_releases.outputs.sys_botbase_version }}
+        FTPD_VERSION: ${{ steps.check_releases.outputs.ftpd_version }}
+        JKSV_VERSION: ${{ steps.check_releases.outputs.jksv_version }}
+      run: |
+        python scripts/combine_releases.py
+        
+    - name: Create combined release
+      if: steps.check_releases.outputs.new_release == 'true'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        RELEASE_TAG: ${{ steps.check_releases.outputs.combined_tag }}
+        CFW_VERSION: ${{ steps.check_releases.outputs.cfw_version }}
+        BOOTLOADER_VERSION: ${{ steps.check_releases.outputs.bootloader_version }}
+        SYSDVR_VERSION: ${{ steps.check_releases.outputs.sysdvr_version }}
+        LDN_MITM_VERSION: ${{ steps.check_releases.outputs.ldn_mitm_version }}
+        SYS_BOTBASE_VERSION: ${{ steps.check_releases.outputs.sys_botbase_version }}
+        FTPD_VERSION: ${{ steps.check_releases.outputs.ftpd_version }}
+        JKSV_VERSION: ${{ steps.check_releases.outputs.jksv_version }}
+      run: |
+        python scripts/create_release.py 
