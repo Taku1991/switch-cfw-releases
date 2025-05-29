@@ -27,12 +27,41 @@ def extract_zip(zip_path, extract_to):
 
 def find_sd_folder(base_path):
     """Findet den 'sd'-Ordner in der CFW-Struktur"""
+    print(f"🔍 Suche sd-Ordner in: {base_path}")
+    
+    # Debug: Zeige Verzeichnisstruktur
+    for root, dirs, files in os.walk(base_path):
+        level = root.replace(str(base_path), '').count(os.sep)
+        indent = ' ' * 2 * level
+        print(f"{indent}{os.path.basename(root)}/")
+        subindent = ' ' * 2 * (level + 1)
+        for file in files[:5]:  # Nur erste 5 Dateien zeigen
+            print(f"{subindent}{file}")
+        if len(files) > 5:
+            print(f"{subindent}... ({len(files)-5} weitere Dateien)")
+        if level > 3:  # Begrenze Tiefe für Debug
+            break
+    
+    # Suche nach 'sd'-Ordner
     for root, dirs, files in os.walk(base_path):
         if 'sd' in dirs:
             sd_path = Path(root) / 'sd'
-            # Überprüfe ob es der richtige sd-Ordner ist (enthält atmosphere, etc.)
+            print(f"✅ sd-Ordner gefunden: {sd_path}")
+            # Überprüfe ob es der richtige sd-Ordner ist
             if (sd_path / 'atmosphere').exists():
+                print(f"✅ Atmosphere-Ordner in sd gefunden")
                 return sd_path
+            else:
+                print(f"⚠️ Kein atmosphere-Ordner in {sd_path}")
+    
+    # Alternative: Suche direkt nach atmosphere-Ordner
+    print("🔍 Suche direkt nach atmosphere-Ordner...")
+    for root, dirs, files in os.walk(base_path):
+        if 'atmosphere' in dirs:
+            atmosphere_parent = Path(root)
+            print(f"✅ Atmosphere-Ordner gefunden in: {atmosphere_parent}")
+            return atmosphere_parent
+    
     return None
 
 def find_bootloader_files(base_path):
@@ -156,7 +185,11 @@ def main():
         # Finde den CFW 'sd'-Ordner (Basis für SD-Karte)
         cfw_sd_folder = find_sd_folder(cfw_dir)
         if not cfw_sd_folder:
-            raise Exception("❌ Konnte 'sd'-Ordner in CFW-Asset nicht finden!")
+            print("⚠️ Kein sd-Ordner gefunden, versuche alternative Struktur...")
+            # Alternative: Kopiere alles vom CFW-Verzeichnis
+            cfw_sd_folder = cfw_dir
+        
+        print(f"📁 Verwende CFW-Basis: {cfw_sd_folder}")
         
         # Kopiere komplette CFW-Struktur als Basis
         print("📁 Kopiere CFW-Basis...")
@@ -240,11 +273,19 @@ def main():
         switch_dir = combined_dir / 'switch'
         switch_dir.mkdir(parents=True, exist_ok=True)
         
+        # ftpd integrieren
         if ftpd_nro.exists():
             shutil.copy2(ftpd_nro, switch_dir / 'ftpd.nro')
+            print("✅ ftpd.nro kopiert")
+        else:
+            print(f"⚠️ ftpd.nro nicht gefunden: {ftpd_nro}")
         
+        # JKSV integrieren
         if jksv_nro.exists():
             shutil.copy2(jksv_nro, switch_dir / 'JKSV.nro')
+            print("✅ JKSV.nro kopiert")
+        else:
+            print(f"⚠️ JKSV.nro nicht gefunden: {jksv_nro}")
         
         # Erstelle finales ZIP
         cfw_version = os.environ.get('CFW_VERSION', 'unknown')
