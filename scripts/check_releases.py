@@ -79,7 +79,7 @@ def main():
         },
         'sys_botbase': {
             'name': 'bdawg1989/sys-botbase',
-            'asset_pattern': 'sys-botbase.zip'
+            'asset_pattern': '.zip'
         },
         'ftpd': {
             'name': 'mtheall/ftpd',

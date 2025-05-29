@@ -27,12 +27,41 @@ def extract_zip(zip_path, extract_to):
 
 def find_sd_folder(base_path):
     """Findet den 'sd'-Ordner in der CFW-Struktur"""
+    print(f"🔍 Suche sd-Ordner in: {base_path}")
+    
+    # Debug: Zeige Verzeichnisstruktur
+    for root, dirs, files in os.walk(base_path):
+        level = root.replace(str(base_path), '').count(os.sep)
+        indent = ' ' * 2 * level
+        print(f"{indent}{os.path.basename(root)}/")
+        subindent = ' ' * 2 * (level + 1)
+        for file in files[:5]:  # Nur erste 5 Dateien zeigen
+            print(f"{subindent}{file}")
+        if len(files) > 5:
+            print(f"{subindent}... ({len(files)-5} weitere Dateien)")
+        if level > 3:  # Begrenze Tiefe für Debug
+            break
+    
+    # Suche nach 'sd'-Ordner
     for root, dirs, files in os.walk(base_path):
         if 'sd' in dirs:
             sd_path = Path(root) / 'sd'
-            # Überprüfe ob es der richtige sd-Ordner ist (enthält atmosphere, etc.)
+            print(f"✅ sd-Ordner gefunden: {sd_path}")
+            # Überprüfe ob es der richtige sd-Ordner ist
             if (sd_path / 'atmosphere').exists():
+                print(f"✅ Atmosphere-Ordner in sd gefunden")
                 return sd_path
+            else:
+                print(f"⚠️ Kein atmosphere-Ordner in {sd_path}")
+    
+    # Alternative: Suche direkt nach atmosphere-Ordner
+    print("🔍 Suche direkt nach atmosphere-Ordner...")
+    for root, dirs, files in os.walk(base_path):
+        if 'atmosphere' in dirs:
+            atmosphere_parent = Path(root)
+            print(f"✅ Atmosphere-Ordner gefunden in: {atmosphere_parent}")
+            return atmosphere_parent
+    
     return None
 
 def find_bootloader_files(base_path):
@@ -64,7 +93,15 @@ def copy_with_merge(src, dst):
     # Erstelle Zielordner falls nicht vorhanden
     dst.mkdir(parents=True, exist_ok=True)
     
-    # Kopiere alle Inhalte rekursiv
+    # Erstelle alle Unterverzeichnisse zuerst (auch leere)
+    for root, dirs, files in os.walk(src):
+        for dir_name in dirs:
+            src_subdir = Path(root) / dir_name
+            rel_path = src_subdir.relative_to(src)
+            dst_subdir = dst / rel_path
+            dst_subdir.mkdir(parents=True, exist_ok=True)
+    
+    # Kopiere alle Dateien rekursiv
     for item in src.iterdir():
         dst_item = dst / item.name
         if item.is_dir():
@@ -84,7 +121,7 @@ def get_asset_urls():
     bootloader_url = get_download_url('CTCaer/hekate', 'hekate_ctcaer')
     sysdvr_url = get_download_url('exelix11/SysDVR', 'sysdvr.zip')
     ldn_mitm_url = get_download_url('Lusamine/ldn_mitm', 'ldn_mitm')
-    sys_botbase_url = get_download_url('bdawg1989/sys-botbase', 'sys-botbase.zip')
+    sys_botbase_url = get_download_url('bdawg1989/sys-botbase', '.zip')
     ftpd_url = get_download_url('mtheall/ftpd', 'ftpd.nro')
     jksv_url = get_download_url('J-D-K/JKSV', 'JKSV.nro')
     
@@ -156,10 +193,25 @@ def main():
         # Finde den CFW 'sd'-Ordner (Basis für SD-Karte)
         cfw_sd_folder = find_sd_folder(cfw_dir)
         if not cfw_sd_folder:
-            raise Exception("❌ Konnte 'sd'-Ordner in CFW-Asset nicht finden!")
+            print("⚠️ Kein sd-Ordner gefunden, versuche alternative Struktur...")
+            # Alternative: Kopiere alles vom CFW-Verzeichnis
+            cfw_sd_folder = cfw_dir
+        
+        print(f"📁 Verwende CFW-Basis: {cfw_sd_folder}")
         
         # Kopiere komplette CFW-Struktur als Basis
         print("📁 Kopiere CFW-Basis...")
+        
+        # Erstelle alle Verzeichnisse zuerst (auch leere)
+        for root, dirs, files in os.walk(cfw_sd_folder):
+            for dir_name in dirs:
+                src_dir = Path(root) / dir_name
+                rel_path = src_dir.relative_to(cfw_sd_folder)
+                dst_dir = combined_dir / rel_path
+                dst_dir.mkdir(parents=True, exist_ok=True)
+                print(f"📁 Ordner erstellt: {rel_path}")
+        
+        # Dann kopiere alle Dateien
         for root, dirs, files in os.walk(cfw_sd_folder):
             for file in files:
                 src_file = Path(root) / file
@@ -167,13 +219,6 @@ def main():
                 dst_file = combined_dir / rel_path
                 dst_file.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(src_file, dst_file)
-        
-        for root, dirs, files in os.walk(cfw_sd_folder):
-            for dir_name in dirs:
-                src_dir = Path(root) / dir_name
-                rel_path = src_dir.relative_to(cfw_sd_folder)
-                dst_dir = combined_dir / rel_path
-                dst_dir.mkdir(parents=True, exist_ok=True)
         
         print("🚀 Integriere Hekate Bootloader...")
         bootloader_files, bootloader_config_dir = find_bootloader_files(bootloader_dir)
@@ -240,11 +285,19 @@ def main():
         switch_dir = combined_dir / 'switch'
         switch_dir.mkdir(parents=True, exist_ok=True)
         
+        # ftpd integrieren
         if ftpd_nro.exists():
             shutil.copy2(ftpd_nro, switch_dir / 'ftpd.nro')
+            print("✅ ftpd.nro kopiert")
+        else:
+            print(f"⚠️ ftpd.nro nicht gefunden: {ftpd_nro}")
         
+        # JKSV integrieren
         if jksv_nro.exists():
             shutil.copy2(jksv_nro, switch_dir / 'JKSV.nro')
+            print("✅ JKSV.nro kopiert")
+        else:
+            print(f"⚠️ JKSV.nro nicht gefunden: {jksv_nro}")
         
         # Erstelle finales ZIP
         cfw_version = os.environ.get('CFW_VERSION', 'unknown')
