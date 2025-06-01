@@ -67,5 +67,6 @@ jobs:
         SYS_BOTBASE_VERSION: ${{ steps.check_releases.outputs.sys_botbase_version }}
         FTPD_VERSION: ${{ steps.check_releases.outputs.ftpd_version }}
         JKSV_VERSION: ${{ steps.check_releases.outputs.jksv_version }}
+        CHANGES: ${{ steps.check_releases.outputs.changes }}
       run: |
         python scripts/create_release.py 

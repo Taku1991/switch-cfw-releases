@@ -2,6 +2,7 @@
 import os
 import json
 import requests
+import datetime
 
 def get_latest_release_info(repo_name, asset_pattern):
     """Holt Informationen über das neueste Release"""
@@ -110,15 +111,24 @@ def main():
     ftpd_version = current_releases['ftpd']['tag_name']
     jksv_version = current_releases['jksv']['tag_name']
     
-    new_release_needed = (
-        cfw_version != last_versions.get('cfw_version') or 
-        bootloader_version != last_versions.get('bootloader_version') or
-        sysdvr_version != last_versions.get('sysdvr_version') or
-        ldn_mitm_version != last_versions.get('ldn_mitm_version') or
-        sys_botbase_version != last_versions.get('sys_botbase_version') or
-        ftpd_version != last_versions.get('ftpd_version') or
-        jksv_version != last_versions.get('jksv_version')
-    )
+    # Erkenne welche Komponenten sich geändert haben
+    changes = []
+    if cfw_version != last_versions.get('cfw_version'):
+        changes.append(f"Atmosphère: {last_versions.get('cfw_version', 'N/A')} → {cfw_version}")
+    if bootloader_version != last_versions.get('bootloader_version'):
+        changes.append(f"Hekate: {last_versions.get('bootloader_version', 'N/A')} → {bootloader_version}")
+    if sysdvr_version != last_versions.get('sysdvr_version'):
+        changes.append(f"SysDVR: {last_versions.get('sysdvr_version', 'N/A')} → {sysdvr_version}")
+    if ldn_mitm_version != last_versions.get('ldn_mitm_version'):
+        changes.append(f"ldn_mitm: {last_versions.get('ldn_mitm_version', 'N/A')} → {ldn_mitm_version}")
+    if sys_botbase_version != last_versions.get('sys_botbase_version'):
+        changes.append(f"sys-botbase: {last_versions.get('sys_botbase_version', 'N/A')} → {sys_botbase_version}")
+    if ftpd_version != last_versions.get('ftpd_version'):
+        changes.append(f"ftpd: {last_versions.get('ftpd_version', 'N/A')} → {ftpd_version}")
+    if jksv_version != last_versions.get('jksv_version'):
+        changes.append(f"JKSV: {last_versions.get('jksv_version', 'N/A')} → {jksv_version}")
+    
+    new_release_needed = len(changes) > 0
         
     if new_release_needed:
         save_last_versions({
@@ -132,7 +142,9 @@ def main():
         })
     
     # GitHub Actions Outputs setzen
-    combined_tag = f"Pokemon-SysBot-CFW-{cfw_version}-Complete"
+    timestamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+    combined_tag = f"v{cfw_version}-{timestamp}"
+    changes_text = "\\n".join(changes) if changes else ""
     
     with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
         f.write(f"new_release={'true' if new_release_needed else 'false'}\n")
@@ -144,6 +156,7 @@ def main():
         f.write(f"ftpd_version={ftpd_version}\n")
         f.write(f"jksv_version={jksv_version}\n")
         f.write(f"combined_tag={combined_tag}\n")
+        f.write(f"changes={changes_text}\n")
         f.write(f"cfw_asset_url={current_releases['cfw']['asset']['browser_download_url'] if current_releases['cfw']['asset'] else ''}\n")
         f.write(f"bootloader_asset_url={current_releases['bootloader']['asset']['browser_download_url'] if current_releases['bootloader']['asset'] else ''}\n")
         f.write(f"sysdvr_asset_url={current_releases['sysdvr']['asset']['browser_download_url'] if current_releases['sysdvr']['asset'] else ''}\n")

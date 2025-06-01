@@ -23,42 +23,57 @@ def main():
     sys_botbase_version = os.environ['SYS_BOTBASE_VERSION']
     ftpd_version = os.environ['FTPD_VERSION']
     jksv_version = os.environ['JKSV_VERSION']
+    changes = os.environ.get('CHANGES', '').replace('\\n', '\n')
     
     release_name = f"Pokemon SysBot CFW {cfw_version} - Complete Solution"
     
-    # Release Notes laden
+    # Release Notes laden oder generieren
     try:
         with open('release_notes.md', 'r', encoding='utf-8') as f:
             release_body = f.read()
     except FileNotFoundError:
-        release_body = f"""# Pokemon SysBot CFW - Complete Solution
+        # Generiere Release Notes mit Änderungen
+        changes_section = ""
+        if changes:
+            changes_section = f"""
+## 🔄 Aktualisierungen in diesem Release
+{changes}
 
-Automatisch kombinierte Release von:
-- Atmosphère {cfw_version} (CFW)
-- Hekate {bootloader_version} (Bootloader)
-- SysDVR {sysdvr_version} (Video-Streaming)
-- ldn_mitm {ldn_mitm_version} (Online-Gaming)
-- sys-botbase {sys_botbase_version} (Pokemon-Bots)
-- ftpd {ftpd_version} (FTP-Server)
-- JKSV {jksv_version} (Save-Manager)
+"""
+        
+        release_body = f"""# 🎮 Pokemon SysBot CFW - Complete Solution
 
-## Installation
-1. Entpacke das ZIP-Archiv auf die SD-Karte deiner Nintendo Switch
-2. Injiziere hekate_ctcaer_*.bin über TegraRcmGUI
-3. Starte CFW über Hekate
+{changes_section}## 🔧 Enthaltene Komponenten
+- **Atmosphère** {cfw_version} - Custom Firmware
+- **Hekate** {bootloader_version} - Bootloader  
+- **SysDVR** {sysdvr_version} - Video-Streaming
+- **ldn_mitm** {ldn_mitm_version} - Online-Gaming
+- **sys-botbase** {sys_botbase_version} - Pokemon-Bot-Framework
+- **ftpd** {ftpd_version} - FTP-Server
+- **JKSV** {jksv_version} - Save-Manager
 
-⚠️ **Wichtig**: SysNAND-Konfiguration mit erhöhtem Ban-Risiko!
+## 📁 Installation
+1. Backup der SD-Karte erstellen
+2. ZIP-Inhalt auf SD-Karte entpacken
+3. Payload injizieren (unpatched) oder mit Modchip booten
 
-**Für Bildungszwecke - Respektiere Nintendos ToS!**
+## 💬 Support
+**Discord**: [discord.gg/pokemonhideout](https://discord.gg/pokemonhideout)
+
+⚠️ **Warnung**: SysNAND-Konfiguration mit erhöhtem Ban-Risiko!
+
+---
+*🤖 Automatisch generiert am {__import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M:%S')} UTC*
 """
     
     try:
-        # Prüfe ob Release bereits existiert
+        # Prüfe ob Release bereits existiert (sollte nicht passieren mit Zeitstempel)
         try:
             existing_release = repo.get_release(release_tag)
-            existing_release.delete_release()
+            print(f"⚠️ Release {release_tag} existiert bereits, überspringe...")
+            return
         except:
-            pass
+            pass  # Release existiert nicht, das ist gut
         
         # Erstelle neues Release
         release = repo.create_git_release(
