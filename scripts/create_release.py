@@ -60,7 +60,6 @@ def main():
 ## 💬 Support
 **Discord**: [discord.gg/pokemonhideout](https://discord.gg/pokemonhideout)
 
-
 ---
 *🤖 Automatisch generiert am {__import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M:%S')} UTC*
 """

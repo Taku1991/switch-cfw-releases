@@ -146,6 +146,43 @@ def get_download_url(repo, asset_pattern):
     
     raise Exception(f"Asset mit Pattern '{asset_pattern}' nicht gefunden in {repo}")
 
+def copy_assets_to_release(combined_dir):
+    """Kopiert Assets aus dem assets/ Ordner in die richtige Struktur"""
+    assets_dir = Path("assets")
+    
+    if not assets_dir.exists():
+        print("⚠️ Assets-Ordner nicht gefunden, überspringe Asset-Kopierung")
+        return
+    
+    print("🎨 Kopiere Assets aus assets/ Ordner...")
+    
+    # Erstelle bootloader und bootloader/res Ordner
+    bootloader_dir = combined_dir / "bootloader"
+    bootloader_res_dir = bootloader_dir / "res"
+    bootloader_dir.mkdir(parents=True, exist_ok=True)
+    bootloader_res_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Kopiere hekate_ipl.ini direkt in bootloader/
+    hekate_ini = assets_dir / "hekate_ipl.ini"
+    if hekate_ini.exists():
+        shutil.copy2(hekate_ini, bootloader_dir / "hekate_ipl.ini")
+        print("✅ hekate_ipl.ini → bootloader/hekate_ipl.ini")
+    else:
+        print("⚠️ hekate_ipl.ini nicht in assets/ gefunden")
+    
+    # Kopiere .bmp Dateien nach bootloader/res/
+    bmp_files = ["background.bmp", "icon_payload.bmp", "icon_switch.bmp"]
+    
+    for bmp_file in bmp_files:
+        bmp_path = assets_dir / bmp_file
+        if bmp_path.exists():
+            shutil.copy2(bmp_path, bootloader_res_dir / bmp_file)
+            print(f"✅ {bmp_file} → bootloader/res/{bmp_file}")
+        else:
+            print(f"⚠️ {bmp_file} nicht in assets/ gefunden")
+    
+    print("🎨 Asset-Kopierung abgeschlossen")
+
 def main():
     # Erstelle Arbeitsverzeichnisse
     work_dir = Path("release_work")
@@ -299,6 +336,9 @@ def main():
         else:
             print(f"⚠️ JKSV.nro nicht gefunden: {jksv_nro}")
         
+        # Kopiere Assets aus dem assets/ Ordner
+        copy_assets_to_release(combined_dir)
+        
         # Erstelle finales ZIP
         cfw_version = os.environ.get('CFW_VERSION', 'unknown')
         bootloader_version = os.environ.get('BOOTLOADER_VERSION', 'unknown')
@@ -340,8 +380,6 @@ def main():
 
 ## 💬 Support
 **Discord**: [discord.gg/pokemonhideout](https://discord.gg/pokemonhideout)
-
-⚠️ **Warnung**: SysNAND-Konfiguration mit erhöhtem Ban-Risiko!
 
 ---
 *🤖 Automatisch generiert am {__import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M:%S')} UTC*
