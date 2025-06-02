@@ -22,7 +22,6 @@ temp/
 
 # Generated files
 *.zip
-last_versions.json
 release_notes.md
 
 # Logs
