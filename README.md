@@ -156,6 +156,38 @@ Dieses Repository:
 - **Erstellt professionelle Releases** mit detaillierten Installationsanleitungen
 - **Gewährleistet Kompatibilität** zwischen allen Komponenten
 
+## 🎨 Custom Bootloader Assets
+
+Dieses Repository enthält automatische Integration von custom Bootloader-Assets für ein personalisiertes Erlebnis:
+
+### 🖼️ Enthaltene Assets:
+- **Custom Boot-Hintergrund** (`background.bmp`) - Pokemon Hideout Branding
+- **Custom Payload-Icon** (`icon_payload.bmp`) - Speziell für CFW-Boot
+- **Custom Switch-Icon** (`icon_switch.bmp`) - Für Stock-Boot  
+- **Vorkonfigurierte Hekate-Config** (`hekate_ipl.ini`) - Optimiert für Pokemon SysBot
+
+### 🔧 Automatische Integration:
+- Assets werden automatisch aus dem `assets/` Ordner kopiert
+- Korrekte Platzierung in `bootloader/` und `bootloader/res/` Struktur
+- Keine manuelle Konfiguration erforderlich
+- Assets sind in jedem Release enthalten
+
+### 📁 Asset-Struktur im Release:
+```
+bootloader/
+├── hekate_ipl.ini          # Hekate-Konfiguration
+└── res/
+    ├── background.bmp      # Boot-Hintergrund
+    ├── icon_payload.bmp    # CFW-Icon
+    └── icon_switch.bmp     # Stock-Icon
+```
+
+### ✨ Features:
+- **Pokemon Hideout Branding** auf Boot-Bildschirm
+- **Professionelles Aussehen** mit custom Icons
+- **Automatische Updates** bei neuen Releases
+- **Plug-and-Play** - keine zusätzliche Konfiguration nötig
+
 ## 📞 Support & Community
 
 ### 🎮 Primärer Support:
