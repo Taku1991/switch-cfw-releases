@@ -41,6 +41,15 @@ jobs:
       run: |
         python scripts/check_releases.py
         
+    - name: Commit version tracking file
+      if: steps.check_releases.outputs.new_release == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add last_versions.json
+        git commit -m "Update version tracking file" || exit 0
+        git push
+        
     - name: Download and combine releases
       if: steps.check_releases.outputs.new_release == 'true'
       env:

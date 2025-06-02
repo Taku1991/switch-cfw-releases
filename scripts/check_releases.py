@@ -43,8 +43,11 @@ def load_last_versions():
     """Lädt die zuletzt verarbeiteten Versionen"""
     try:
         with open('last_versions.json', 'r') as f:
-            return json.load(f)
+            versions = json.load(f)
+            print(f"📄 Geladene Versionen: {versions}")
+            return versions
     except (FileNotFoundError, json.JSONDecodeError):
+        print("📄 Keine last_versions.json gefunden, verwende leere Versionen")
         return {
             'cfw_version': '', 
             'bootloader_version': '', 
@@ -57,8 +60,9 @@ def load_last_versions():
 
 def save_last_versions(versions):
     """Speichert die aktuellen Versionen"""
+    print(f"💾 Speichere Versionen: {versions}")
     with open('last_versions.json', 'w') as f:
-        json.dump(versions, f)
+        json.dump(versions, f, indent=2)
 
 def main():
     repos = {
@@ -111,6 +115,15 @@ def main():
     ftpd_version = current_releases['ftpd']['tag_name']
     jksv_version = current_releases['jksv']['tag_name']
     
+    print(f"🔍 Aktuelle Versionen:")
+    print(f"  CFW: {cfw_version}")
+    print(f"  Bootloader: {bootloader_version}")
+    print(f"  SysDVR: {sysdvr_version}")
+    print(f"  ldn_mitm: {ldn_mitm_version}")
+    print(f"  sys-botbase: {sys_botbase_version}")
+    print(f"  ftpd: {ftpd_version}")
+    print(f"  JKSV: {jksv_version}")
+    
     # Erkenne welche Komponenten sich geändert haben
     changes = []
     if cfw_version != last_versions.get('cfw_version'):
@@ -127,6 +140,8 @@ def main():
         changes.append(f"ftpd: {last_versions.get('ftpd_version', 'N/A')} → {ftpd_version}")
     if jksv_version != last_versions.get('jksv_version'):
         changes.append(f"JKSV: {last_versions.get('jksv_version', 'N/A')} → {jksv_version}")
+    
+    print(f"🔄 Erkannte Änderungen: {changes}")
     
     new_release_needed = len(changes) > 0
         
