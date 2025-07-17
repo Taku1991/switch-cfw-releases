@@ -83,6 +83,8 @@ def find_bootloader_files(base_path):
     
     return bootloader_files, bootloader_dir
 
+
+
 def copy_with_merge(src, dst):
     """Kopiert Dateien und mergt Ordner intelligent"""
     if src.is_file():
@@ -118,6 +120,7 @@ def get_asset_urls():
     
     # GitHub API URLs für Assets
     cfw_url = get_download_url('Atmosphere-NX/Atmosphere', 'atmosphere')
+    fusee_url = get_download_url('Atmosphere-NX/Atmosphere', 'fusee.bin')
     bootloader_url = get_download_url('CTCaer/hekate', 'hekate_ctcaer')
     sysdvr_url = get_download_url('exelix11/SysDVR', 'sysdvr.zip')
     ldn_mitm_url = get_download_url('Lusamine/ldn_mitm', 'ldn_mitm')
@@ -125,7 +128,7 @@ def get_asset_urls():
     ftpd_url = get_download_url('mtheall/ftpd', 'ftpd.nro')
     jksv_url = get_download_url('J-D-K/JKSV', 'JKSV.nro')
     
-    return cfw_url, bootloader_url, sysdvr_url, ldn_mitm_url, sys_botbase_url, ftpd_url, jksv_url
+    return cfw_url, fusee_url, bootloader_url, sysdvr_url, ldn_mitm_url, sys_botbase_url, ftpd_url, jksv_url
 
 def get_download_url(repo, asset_pattern):
     """Holt die Download-URL für ein Asset"""
@@ -200,10 +203,11 @@ def main():
     
     try:
         # Hole Asset URLs
-        cfw_url, bootloader_url, sysdvr_url, ldn_mitm_url, sys_botbase_url, ftpd_url, jksv_url = get_asset_urls()
+        cfw_url, fusee_url, bootloader_url, sysdvr_url, ldn_mitm_url, sys_botbase_url, ftpd_url, jksv_url = get_asset_urls()
         
         # Download Assets
         cfw_zip = work_dir / "atmosphere.zip"
+        fusee_bin = work_dir / "fusee.bin"
         bootloader_zip = work_dir / "hekate_ctcaer.zip"
         sysdvr_zip = work_dir / "sysdvr.zip"
         ldn_mitm_zip = work_dir / "ldn_mitm.zip"
@@ -213,6 +217,7 @@ def main():
         
         print("⬇️ Downloading Components...")
         download_file(cfw_url, cfw_zip)
+        download_file(fusee_url, fusee_bin)
         download_file(bootloader_url, bootloader_zip)
         download_file(sysdvr_url, sysdvr_zip)
         download_file(ldn_mitm_url, ldn_mitm_zip)
@@ -267,6 +272,21 @@ def main():
         if bootloader_config_dir and bootloader_config_dir.exists():
             target_bootloader = combined_dir / 'bootloader'
             copy_with_merge(bootloader_config_dir, target_bootloader)
+        
+        print("🔧 Integriere Fusee.bin...")
+        # Erstelle bootloader/payloads Ordner falls nicht vorhanden
+        payloads_dir = combined_dir / 'bootloader' / 'payloads'
+        payloads_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Kopiere Fusee.bin in den Root-Ordner
+        root_fusee = combined_dir / 'Fusee.bin'
+        shutil.copy2(fusee_bin, root_fusee)
+        print(f"✅ Fusee.bin → /Fusee.bin (Root)")
+        
+        # Kopiere Fusee.bin nach bootloader/payloads/
+        target_fusee = payloads_dir / 'Fusee.bin'
+        shutil.copy2(fusee_bin, target_fusee)
+        print(f"✅ Fusee.bin → bootloader/payloads/Fusee.bin")
         
         print("🔗 Integriere SysDVR...")
         sysdvr_root = None

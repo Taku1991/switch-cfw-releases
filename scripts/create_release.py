@@ -25,6 +25,9 @@ def main():
     jksv_version = os.environ['JKSV_VERSION']
     changes = os.environ.get('CHANGES', '').replace('\\n', '\n')
     
+    # Debug: Zeige die Änderungen an
+    print(f"🔍 Empfangene Änderungen: '{changes}'")
+    
     release_name = f"Pokemon SysBot CFW {cfw_version} - Complete Solution"
     
     # Release Notes laden oder generieren
@@ -34,10 +37,17 @@ def main():
     except FileNotFoundError:
         # Generiere Release Notes mit Änderungen
         changes_section = ""
-        if changes:
+        if changes and changes.strip():
+            # Formatiere die Änderungen als Liste
+            changes_list = changes.split('\\n')
+            formatted_changes = []
+            for change in changes_list:
+                if change.strip():
+                    formatted_changes.append(f"- {change.strip()}")
+            
             changes_section = f"""
 ## 🔄 Aktualisierungen in diesem Release
-{changes}
+{chr(10).join(formatted_changes)}
 
 """
         
