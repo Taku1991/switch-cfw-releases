@@ -1,0 +1,71 @@
+name: Manual Release Creator
+
+on:
+  workflow_dispatch: # Nur manueller Trigger
+  
+env:
+  REPO1: "Atmosphere-NX/Atmosphere"
+  REPO2: "CTCaer/hekate"
+  REPO3: "exelix11/SysDVR"
+  REPO4: "Lusamine/ldn_mitm"
+  REPO5: "bdawg1989/sys-botbase"
+  REPO6: "mtheall/ftpd"
+  REPO7: "J-D-K/JKSV"
+
+jobs:
+  create-manual-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.PAT }}
+        
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install Dependencies
+      run: |
+        pip install requests PyGithub python-dotenv
+        
+    - name: Get latest versions and create release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Hole aktuelle Versionen ohne Änderungsprüfung
+        python scripts/check_releases.py
+        
+        # Lade die Versionen aus der JSON-Datei
+        import json
+        with open('last_versions.json', 'r') as f:
+            versions = json.load(f)
+        
+        # Setze Environment-Variablen für das Release
+        import os
+        os.environ['CFW_VERSION'] = versions.get('cfw_version', 'unknown')
+        os.environ['BOOTLOADER_VERSION'] = versions.get('bootloader_version', 'unknown')
+        os.environ['SYSDVR_VERSION'] = versions.get('sysdvr_version', 'unknown')
+        os.environ['LDN_MITM_VERSION'] = versions.get('ldn_mitm_version', 'unknown')
+        os.environ['SYS_BOTBASE_VERSION'] = versions.get('sys_botbase_version', 'unknown')
+        os.environ['FTPD_VERSION'] = versions.get('ftpd_version', 'unknown')
+        os.environ['JKSV_VERSION'] = versions.get('jksv_version', 'unknown')
+        
+        # Erstelle Zeitstempel für Tag
+        import datetime
+        timestamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+        os.environ['RELEASE_TAG'] = f"v{versions.get('cfw_version', 'unknown')}-{timestamp}"
+        
+        # Erstelle das Release
+        python scripts/combine_releases.py
+        python scripts/create_release.py
+        
+    - name: Commit version tracking file
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add last_versions.json
+        git commit -m "Update version tracking file (manual release)" || exit 0
+        git push 
