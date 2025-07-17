@@ -35,32 +35,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        # Hole aktuelle Versionen ohne Änderungsprüfung
-        python scripts/check_releases.py
-        
-        # Lade die Versionen aus der JSON-Datei
-        import json
-        with open('last_versions.json', 'r') as f:
-            versions = json.load(f)
-        
-        # Setze Environment-Variablen für das Release
-        import os
-        os.environ['CFW_VERSION'] = versions.get('cfw_version', 'unknown')
-        os.environ['BOOTLOADER_VERSION'] = versions.get('bootloader_version', 'unknown')
-        os.environ['SYSDVR_VERSION'] = versions.get('sysdvr_version', 'unknown')
-        os.environ['LDN_MITM_VERSION'] = versions.get('ldn_mitm_version', 'unknown')
-        os.environ['SYS_BOTBASE_VERSION'] = versions.get('sys_botbase_version', 'unknown')
-        os.environ['FTPD_VERSION'] = versions.get('ftpd_version', 'unknown')
-        os.environ['JKSV_VERSION'] = versions.get('jksv_version', 'unknown')
-        
-        # Erstelle Zeitstempel für Tag
-        import datetime
-        timestamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-        os.environ['RELEASE_TAG'] = f"v{versions.get('cfw_version', 'unknown')}-{timestamp}"
-        
-        # Erstelle das Release
-        python scripts/combine_releases.py
-        python scripts/create_release.py
+        python scripts/manual_release.py
         
     - name: Commit version tracking file
       run: |
