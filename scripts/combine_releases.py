@@ -100,7 +100,7 @@ def find_bootloader_files(base_path):
 
 
 def copy_with_merge(src, dst):
-    """Kopiert Dateien und mergt Ordner intelligent"""
+    """Kopiert Dateien und mergt Ordner intelligent - behält ALLE Ordner (auch leere)"""
     if src.is_file():
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, dst)
@@ -109,21 +109,26 @@ def copy_with_merge(src, dst):
     # Erstelle Zielordner falls nicht vorhanden
     dst.mkdir(parents=True, exist_ok=True)
     
-    # Erstelle alle Unterverzeichnisse zuerst (auch leere)
+    print(f"🔄 Merge: {src.name} → {dst.name}")
+    
+    # Erstelle ALLE Unterverzeichnisse zuerst (auch leere) - vollständige Struktur
     for root, dirs, files in os.walk(src):
         for dir_name in dirs:
             src_subdir = Path(root) / dir_name
             rel_path = src_subdir.relative_to(src)
             dst_subdir = dst / rel_path
             dst_subdir.mkdir(parents=True, exist_ok=True)
+            print(f"📁 Ordner erstellt/gemergt: {rel_path}")
     
-    # Kopiere alle Dateien rekursiv
-    for item in src.iterdir():
-        dst_item = dst / item.name
-        if item.is_dir():
-            copy_with_merge(item, dst_item)
-        else:
-            shutil.copy2(item, dst_item)
+    # Kopiere ALLE Dateien (vollständige Datei-Kopie wie beim CFW-Teil)
+    for root, dirs, files in os.walk(src):
+        for file in files:
+            src_file = Path(root) / file
+            rel_path = src_file.relative_to(src)
+            dst_file = dst / rel_path
+            dst_file.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src_file, dst_file)
+            print(f"📄 Datei kopiert: {rel_path}")
 
 def get_asset_urls():
     """Holt die Asset URLs aus den Environment-Variablen"""
@@ -276,6 +281,21 @@ def main():
                 dst_file.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(src_file, dst_file)
         
+        print("🔧 Integriere fusee.bin...")
+        # Erstelle bootloader/payloads Ordner falls nicht vorhanden
+        payloads_dir = combined_dir / 'bootloader' / 'payloads'
+        payloads_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Kopiere fusee.bin in den Root-Ordner (VOR Hekate, um korrekte Dateinamen zu gewährleisten)
+        root_fusee = combined_dir / 'fusee.bin'
+        shutil.copy2(fusee_bin, root_fusee)
+        print(f"✅ fusee.bin → /fusee.bin (Root)")
+        
+        # Kopiere fusee.bin nach bootloader/payloads/ (VOR Hekate, um korrekte Dateinamen zu gewährleisten)
+        target_fusee = payloads_dir / 'fusee.bin'
+        shutil.copy2(fusee_bin, target_fusee)
+        print(f"✅ fusee.bin → bootloader/payloads/fusee.bin")
+        
         print("🚀 Integriere Hekate Bootloader...")
         bootloader_files, bootloader_config_dir = find_bootloader_files(bootloader_dir)
         
@@ -286,21 +306,6 @@ def main():
         if bootloader_config_dir and bootloader_config_dir.exists():
             target_bootloader = combined_dir / 'bootloader'
             copy_with_merge(bootloader_config_dir, target_bootloader)
-        
-        print("🔧 Integriere fusee.bin...")
-        # Erstelle bootloader/payloads Ordner falls nicht vorhanden
-        payloads_dir = combined_dir / 'bootloader' / 'payloads'
-        payloads_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Kopiere fusee.bin in den Root-Ordner
-        root_fusee = combined_dir / 'fusee.bin'
-        shutil.copy2(fusee_bin, root_fusee)
-        print(f"✅ fusee.bin → /fusee.bin (Root)")
-        
-        # Kopiere fusee.bin nach bootloader/payloads/
-        target_fusee = payloads_dir / 'fusee.bin'
-        shutil.copy2(fusee_bin, target_fusee)
-        print(f"✅ fusee.bin → bootloader/payloads/fusee.bin")
         
         print("🔗 Integriere SysDVR...")
         sysdvr_root = None
