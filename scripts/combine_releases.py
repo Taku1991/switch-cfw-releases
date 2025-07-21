@@ -25,77 +25,7 @@ def extract_zip(zip_path, extract_to):
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
         zip_ref.extractall(extract_to)
 
-def find_sd_folder(base_path):
-    """Findet den 'sd'-Ordner in der CFW-Struktur"""
-    print(f"🔍 Suche sd-Ordner in: {base_path}")
-    
-    # Debug: Zeige Verzeichnisstruktur
-    for root, dirs, files in os.walk(base_path):
-        level = root.replace(str(base_path), '').count(os.sep)
-        indent = ' ' * 2 * level
-        print(f"{indent}{os.path.basename(root)}/")
-        subindent = ' ' * 2 * (level + 1)
-        for file in files[:5]:  # Nur erste 5 Dateien zeigen
-            print(f"{subindent}{file}")
-        if len(files) > 5:
-            print(f"{subindent}... ({len(files)-5} weitere Dateien)")
-        if level > 3:  # Begrenze Tiefe für Debug
-            break
-    
-    # Erste Priorität: Suche nach 'sd'-Ordner mit atmosphere
-    for root, dirs, files in os.walk(base_path):
-        if 'sd' in dirs:
-            sd_path = Path(root) / 'sd'
-            print(f"✅ sd-Ordner gefunden: {sd_path}")
-            # Überprüfe ob es der richtige sd-Ordner ist
-            if (sd_path / 'atmosphere').exists():
-                print(f"✅ Atmosphere-Ordner in sd gefunden")
-                return sd_path
-            else:
-                print(f"⚠️ Kein atmosphere-Ordner in {sd_path}")
-    
-    # Zweite Priorität: Suche nach Verzeichnis mit atmosphere und switch
-    print("🔍 Suche nach Verzeichnis mit atmosphere und switch...")
-    for root, dirs, files in os.walk(base_path):
-        if 'atmosphere' in dirs and 'switch' in dirs:
-            cfw_root = Path(root)
-            print(f"✅ CFW-Root mit atmosphere und switch gefunden: {cfw_root}")
-            return cfw_root
-    
-    # Dritte Priorität: Suche direkt nach atmosphere-Ordner
-    print("🔍 Suche direkt nach atmosphere-Ordner...")
-    for root, dirs, files in os.walk(base_path):
-        if 'atmosphere' in dirs:
-            atmosphere_parent = Path(root)
-            print(f"✅ Atmosphere-Ordner gefunden in: {atmosphere_parent}")
-            return atmosphere_parent
-    
-    # Letzte Option: Prüfe ob im base_path selbst atmosphere ist
-    if (base_path / 'atmosphere').exists():
-        print(f"✅ Atmosphere direkt im base_path gefunden: {base_path}")
-        return base_path
-    
-    print("⚠️ Keine geeignete CFW-Struktur gefunden")
-    return None
 
-def find_bootloader_files(base_path):
-    """Findet Hekate Bootloader-Dateien"""
-    bootloader_files = []
-    bootloader_dir = None
-    
-    for root, dirs, files in os.walk(base_path):
-        for file in files:
-            # Hekate Binary Files
-            if file.endswith('.bin') and 'hekate' in file.lower():
-                bootloader_files.append(Path(root) / file)
-            # payload.bin für Chainloading
-            elif file == 'payload.bin':
-                bootloader_files.append(Path(root) / file)
-        # Bootloader Ordner
-        if 'bootloader' in dirs:
-            bootloader_dir = Path(root) / 'bootloader'
-    
-    return bootloader_files, bootloader_dir
 
 
 
@@ -192,10 +122,23 @@ def copy_assets_to_release(combined_dir):
     else:
         print("⚠️ hekate_ipl.ini nicht in assets/ gefunden")
     
-    # Kopiere .bmp Dateien nach bootloader/res/
-    bmp_files = ["background.bmp", "icon_payload.bmp", "icon_switch.bmp"]
+    # Kopiere background.bmp sowohl nach bootloader/ als auch bootloader/res/
+    background_bmp = assets_dir / "background.bmp"
+    if background_bmp.exists():
+        # Kopiere nach bootloader/ direkt
+        shutil.copy2(background_bmp, bootloader_dir / "background.bmp")
+        print("✅ background.bmp → bootloader/background.bmp")
+        
+        # Kopiere nach bootloader/res/
+        shutil.copy2(background_bmp, bootloader_res_dir / "background.bmp")
+        print("✅ background.bmp → bootloader/res/background.bmp")
+    else:
+        print("⚠️ background.bmp nicht in assets/ gefunden")
     
-    for bmp_file in bmp_files:
+    # Kopiere andere .bmp Dateien nach bootloader/res/
+    other_bmp_files = ["icon_payload.bmp", "icon_switch.bmp"]
+    
+    for bmp_file in other_bmp_files:
         bmp_path = assets_dir / bmp_file
         if bmp_path.exists():
             shutil.copy2(bmp_path, bootloader_res_dir / bmp_file)
@@ -204,6 +147,148 @@ def copy_assets_to_release(combined_dir):
             print(f"⚠️ {bmp_file} nicht in assets/ gefunden")
     
     print("🎨 Asset-Kopierung abgeschlossen")
+
+def clean_atmosphere_config(combined_dir):
+    """Bereinigt Atmosphere-Konfiguration um Cheat-Probleme zu vermeiden"""
+    print("🧹 Bereinige Atmosphere-Konfiguration...")
+    
+    atmosphere_dir = combined_dir / "atmosphere"
+    if not atmosphere_dir.exists():
+        print("⚠️ Atmosphere-Ordner nicht gefunden, überspringe Konfigurationsbereinigung")
+        return
+    
+    # 1. Entferne alle Cheat-Dateien aus atmosphere/contents/
+    contents_dir = atmosphere_dir / "contents"
+    if contents_dir.exists():
+        print("🔍 Prüfe atmosphere/contents/ auf Cheat-Dateien...")
+        for title_dir in contents_dir.iterdir():
+            if title_dir.is_dir():
+                cheats_dir = title_dir / "cheats"
+                if cheats_dir.exists():
+                    print(f"🗑️ Entferne Cheat-Ordner: {cheats_dir.relative_to(combined_dir)}")
+                    shutil.rmtree(cheats_dir)
+                
+                # Entferne auch einzelne .txt Cheat-Dateien
+                for file in title_dir.glob("*.txt"):
+                    if "cheat" in file.name.lower():
+                        print(f"🗑️ Entferne Cheat-Datei: {file.relative_to(combined_dir)}")
+                        file.unlink()
+    
+    # 2. Erstelle/Überschreibe system_settings.ini mit sicheren Einstellungen
+    config_dir = atmosphere_dir / "config"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    
+    system_settings_ini = config_dir / "system_settings.ini"
+    safe_config = """[atmosphere]
+; Deaktiviere Cheats standardmäßig
+enable_cheats = u8!0x0
+
+[eupld]
+; Upload-Crash-Reports deaktivieren für bessere Stabilität
+upload_enabled = u8!0x0
+
+[ro]
+; Disable signature verification relaxed
+ease_nro_restriction = u8!0x1
+
+[exosphere]
+; Blanking Display während Boot für sauberen Start
+blank_prodinfo_sysmmc = u8!0x0
+blank_prodinfo_emummc = u8!0x0
+
+[hbl_config]
+; Homebrew Loader Konfiguration
+override_key = !R
+override_any_app = u8!0x1
+
+[btm]
+; Bluetooth Manager - Standard-Einstellungen
+fatal_auto_reboot_interval = u64!0x0
+"""
+    
+    with open(system_settings_ini, 'w', encoding='utf-8') as f:
+        f.write(safe_config)
+    print("✅ system_settings.ini mit sicherer Konfiguration erstellt")
+    
+    # 3. Entferne override_config.ini falls vorhanden (kann Cheat-Settings enthalten)
+    override_config = config_dir / "override_config.ini"
+    if override_config.exists():
+        print("🗑️ Entferne override_config.ini (kann problematische Einstellungen enthalten)")
+        override_config.unlink()
+    
+    # 4. Erstelle leeren exefs_patches Ordner falls nicht vorhanden (verhindert Fehler)
+    exefs_patches_dir = atmosphere_dir / "exefs_patches"
+    exefs_patches_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Erstelle leeren kip_patches Ordner falls nicht vorhanden
+    kip_patches_dir = atmosphere_dir / "kip_patches"
+    kip_patches_dir.mkdir(parents=True, exist_ok=True)
+    
+    print("✅ Atmosphere-Konfiguration bereinigt - Cheats deaktiviert")
+
+def find_component_structure(base_path, component_name):
+    """Findet die korrekte Struktur für verschiedene CFW-Komponenten"""
+    print(f"🔍 Analysiere {component_name}-Struktur in: {base_path}")
+    
+    # Debug: Zeige erste Ebene
+    items = list(base_path.iterdir()) if base_path.exists() else []
+    dirs = [item.name for item in items if item.is_dir()]
+    files = [item.name for item in items if item.is_file()]
+    print(f"📁 Ordner: {dirs}")
+    print(f"📄 Dateien: {files}")
+    
+    # Prüfe auf direkte SD-Struktur (atmosphere/ und/oder switch/ vorhanden)
+    has_atmosphere = (base_path / 'atmosphere').exists()
+    has_switch = (base_path / 'switch').exists()
+    has_bootloader = (base_path / 'bootloader').exists()
+    
+    if has_atmosphere or has_switch or has_bootloader:
+        print(f"✅ {component_name}: Direkte SD-Struktur erkannt")
+        return base_path
+    
+    # Suche nach Unterordnern mit SD-Struktur
+    for item in base_path.iterdir():
+        if item.is_dir():
+            sub_has_atmosphere = (item / 'atmosphere').exists()
+            sub_has_switch = (item / 'switch').exists()
+            sub_has_bootloader = (item / 'bootloader').exists()
+            
+            if sub_has_atmosphere or sub_has_switch or sub_has_bootloader:
+                print(f"✅ {component_name}: SD-Struktur in Unterordner gefunden: {item}")
+                return item
+    
+    print(f"⚠️ {component_name}: Keine erkennbare SD-Struktur gefunden")
+    return None
+
+def integrate_component(component_root, combined_dir, component_name):
+    """Integriert eine Komponente in das kombinierte Release"""
+    if not component_root or not component_root.exists():
+        print(f"⚠️ {component_name}: Komponente nicht gefunden, überspringe")
+        return False
+    
+    print(f"🔧 Integriere {component_name}...")
+    
+    success = True
+    for item in component_root.iterdir():
+        if item.is_dir():
+            target_dir = combined_dir / item.name
+            try:
+                copy_with_merge(item, target_dir)
+                print(f"✅ {component_name}: {item.name}/ → {item.name}/")
+            except Exception as e:
+                print(f"❌ {component_name}: Fehler beim Kopieren von {item.name}/: {e}")
+                success = False
+        else:
+            try:
+                target_file = combined_dir / item.name
+                target_file.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(item, target_file)
+                print(f"✅ {component_name}: {item.name} → {item.name}")
+            except Exception as e:
+                print(f"❌ {component_name}: Fehler beim Kopieren von {item.name}: {e}")
+                success = False
+    
+    return success
 
 def main():
     # Erstelle Arbeitsverzeichnisse
@@ -251,35 +336,10 @@ def main():
         extract_zip(ldn_mitm_zip, ldn_mitm_dir)
         extract_zip(sys_botbase_zip, sys_botbase_dir)
         
-        # Finde den CFW 'sd'-Ordner (Basis für SD-Karte)
-        cfw_sd_folder = find_sd_folder(cfw_dir)
-        if not cfw_sd_folder:
-            print("⚠️ Kein sd-Ordner gefunden, versuche alternative Struktur...")
-            # Alternative: Kopiere alles vom CFW-Verzeichnis
-            cfw_sd_folder = cfw_dir
-        
-        print(f"📁 Verwende CFW-Basis: {cfw_sd_folder}")
-        
-        # Kopiere komplette CFW-Struktur als Basis
-        print("📁 Kopiere CFW-Basis...")
-        
-        # Erstelle alle Verzeichnisse zuerst (auch leere)
-        for root, dirs, files in os.walk(cfw_sd_folder):
-            for dir_name in dirs:
-                src_dir = Path(root) / dir_name
-                rel_path = src_dir.relative_to(cfw_sd_folder)
-                dst_dir = combined_dir / rel_path
-                dst_dir.mkdir(parents=True, exist_ok=True)
-                print(f"📁 Ordner erstellt: {rel_path}")
-        
-        # Dann kopiere alle Dateien
-        for root, dirs, files in os.walk(cfw_sd_folder):
-            for file in files:
-                src_file = Path(root) / file
-                rel_path = src_file.relative_to(cfw_sd_folder)
-                dst_file = combined_dir / rel_path
-                dst_file.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(src_file, dst_file)
+        # 1. Integriere Atmosphere CFW als Basis
+        atmosphere_root = find_component_structure(cfw_dir, "Atmosphere")
+        if not integrate_component(atmosphere_root, combined_dir, "Atmosphere CFW"):
+            raise Exception("❌ Konnte Atmosphere CFW nicht integrieren!")
         
         print("🔧 Integriere fusee.bin...")
         # Erstelle bootloader/payloads Ordner falls nicht vorhanden
@@ -296,66 +356,21 @@ def main():
         shutil.copy2(fusee_bin, target_fusee)
         print(f"✅ fusee.bin → bootloader/payloads/fusee.bin")
         
-        print("🚀 Integriere Hekate Bootloader...")
-        bootloader_files, bootloader_config_dir = find_bootloader_files(bootloader_dir)
+        # 2. Integriere Hekate Bootloader
+        bootloader_root = find_component_structure(bootloader_dir, "Hekate")
+        integrate_component(bootloader_root, combined_dir, "Hekate Bootloader")
         
-        for bootloader_file in bootloader_files:
-            target = combined_dir / bootloader_file.name
-            shutil.copy2(bootloader_file, target)
+        # 3. Integriere SysDVR
+        sysdvr_root = find_component_structure(sysdvr_dir, "SysDVR")
+        integrate_component(sysdvr_root, combined_dir, "SysDVR")
         
-        if bootloader_config_dir and bootloader_config_dir.exists():
-            target_bootloader = combined_dir / 'bootloader'
-            copy_with_merge(bootloader_config_dir, target_bootloader)
+        # 4. Integriere ldn_mitm
+        ldn_mitm_root = find_component_structure(ldn_mitm_dir, "ldn_mitm")
+        integrate_component(ldn_mitm_root, combined_dir, "ldn_mitm")
         
-        print("🔗 Integriere SysDVR...")
-        sysdvr_root = None
-        for root, dirs, files in os.walk(sysdvr_dir):
-            if 'atmosphere' in dirs and 'switch' in dirs:
-                sysdvr_root = Path(root)
-                break
-        
-        if not sysdvr_root:
-            for root, dirs, files in os.walk(sysdvr_dir):
-                if 'atmosphere' in dirs:
-                    sysdvr_root = Path(root)
-                    break
-        
-        if not sysdvr_root:
-            raise Exception("❌ Konnte SysDVR-Struktur nicht finden!")
-        
-        for item in sysdvr_root.iterdir():
-            if item.is_dir():
-                copy_with_merge(item, combined_dir / item.name)
-            else:
-                shutil.copy2(item, combined_dir / item.name)
-        
-        print("🌐 Integriere ldn_mitm...")
-        ldn_mitm_root = None
-        for root, dirs, files in os.walk(ldn_mitm_dir):
-            if 'atmosphere' in dirs or any(f.endswith('.kip') for f in files):
-                ldn_mitm_root = Path(root)
-                break
-        
-        if ldn_mitm_root:
-            for item in ldn_mitm_root.iterdir():
-                if item.is_dir():
-                    copy_with_merge(item, combined_dir / item.name)
-                else:
-                    shutil.copy2(item, combined_dir / item.name)
-        
-        print("🤖 Integriere sys-botbase...")
-        sys_botbase_root = None
-        for root, dirs, files in os.walk(sys_botbase_dir):
-            if 'atmosphere' in dirs or any(f.endswith('.kip') for f in files):
-                sys_botbase_root = Path(root)
-                break
-        
-        if sys_botbase_root:
-            for item in sys_botbase_root.iterdir():
-                if item.is_dir():
-                    copy_with_merge(item, combined_dir / item.name)
-                else:
-                    shutil.copy2(item, combined_dir / item.name)
+        # 5. Integriere sys-botbase
+        sys_botbase_root = find_component_structure(sys_botbase_dir, "sys-botbase")
+        integrate_component(sys_botbase_root, combined_dir, "sys-botbase")
         
         print("📁 Integriere Homebrew Apps...")
         switch_dir = combined_dir / 'switch'
@@ -377,6 +392,9 @@ def main():
         
         # Kopiere Assets aus dem assets/ Ordner
         copy_assets_to_release(combined_dir)
+
+        # Bereinige Atmosphere-Konfiguration
+        clean_atmosphere_config(combined_dir)
         
         # Erstelle finales ZIP
         cfw_version = os.environ.get('CFW_VERSION', 'unknown')
