@@ -391,12 +391,22 @@ def main():
         
         print(f"📦 Erstelle Release: {final_zip_name}")
         
-        # Erstelle ZIP
+        # Erstelle ZIP mit ALLEN Ordnern (auch leere)
         with zipfile.ZipFile(final_zip_name, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # Erst alle Ordner hinzufügen (auch leere)
+            for dir_path in combined_dir.rglob('*'):
+                if dir_path.is_dir():
+                    arcname = dir_path.relative_to(combined_dir)
+                    # Ordner mit '/' am Ende hinzufügen, damit sie im ZIP erscheinen
+                    zipf.writestr(str(arcname) + '/', '')
+                    print(f"📁 ZIP: {arcname}/")
+            
+            # Dann alle Dateien hinzufügen
             for file_path in combined_dir.rglob('*'):
                 if file_path.is_file():
                     arcname = file_path.relative_to(combined_dir)
                     zipf.write(file_path, arcname)
+                    print(f"📄 ZIP: {arcname}")
         
         print(f"✅ Release erstellt: {final_zip_name}")
         
