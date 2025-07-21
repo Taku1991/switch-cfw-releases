@@ -42,7 +42,7 @@ def find_sd_folder(base_path):
         if level > 3:  # Begrenze Tiefe für Debug
             break
     
-    # Suche nach 'sd'-Ordner
+    # Erste Priorität: Suche nach 'sd'-Ordner mit atmosphere
     for root, dirs, files in os.walk(base_path):
         if 'sd' in dirs:
             sd_path = Path(root) / 'sd'
@@ -54,7 +54,15 @@ def find_sd_folder(base_path):
             else:
                 print(f"⚠️ Kein atmosphere-Ordner in {sd_path}")
     
-    # Alternative: Suche direkt nach atmosphere-Ordner
+    # Zweite Priorität: Suche nach Verzeichnis mit atmosphere und switch
+    print("🔍 Suche nach Verzeichnis mit atmosphere und switch...")
+    for root, dirs, files in os.walk(base_path):
+        if 'atmosphere' in dirs and 'switch' in dirs:
+            cfw_root = Path(root)
+            print(f"✅ CFW-Root mit atmosphere und switch gefunden: {cfw_root}")
+            return cfw_root
+    
+    # Dritte Priorität: Suche direkt nach atmosphere-Ordner
     print("🔍 Suche direkt nach atmosphere-Ordner...")
     for root, dirs, files in os.walk(base_path):
         if 'atmosphere' in dirs:
@@ -62,6 +70,12 @@ def find_sd_folder(base_path):
             print(f"✅ Atmosphere-Ordner gefunden in: {atmosphere_parent}")
             return atmosphere_parent
     
+    # Letzte Option: Prüfe ob im base_path selbst atmosphere ist
+    if (base_path / 'atmosphere').exists():
+        print(f"✅ Atmosphere direkt im base_path gefunden: {base_path}")
+        return base_path
+    
+    print("⚠️ Keine geeignete CFW-Struktur gefunden")
     return None
 
 def find_bootloader_files(base_path):
@@ -273,20 +287,20 @@ def main():
             target_bootloader = combined_dir / 'bootloader'
             copy_with_merge(bootloader_config_dir, target_bootloader)
         
-        print("🔧 Integriere Fusee.bin...")
+        print("🔧 Integriere fusee.bin...")
         # Erstelle bootloader/payloads Ordner falls nicht vorhanden
         payloads_dir = combined_dir / 'bootloader' / 'payloads'
         payloads_dir.mkdir(parents=True, exist_ok=True)
         
-        # Kopiere Fusee.bin in den Root-Ordner
-        root_fusee = combined_dir / 'Fusee.bin'
+        # Kopiere fusee.bin in den Root-Ordner
+        root_fusee = combined_dir / 'fusee.bin'
         shutil.copy2(fusee_bin, root_fusee)
-        print(f"✅ Fusee.bin → /Fusee.bin (Root)")
+        print(f"✅ fusee.bin → /fusee.bin (Root)")
         
-        # Kopiere Fusee.bin nach bootloader/payloads/
-        target_fusee = payloads_dir / 'Fusee.bin'
+        # Kopiere fusee.bin nach bootloader/payloads/
+        target_fusee = payloads_dir / 'fusee.bin'
         shutil.copy2(fusee_bin, target_fusee)
-        print(f"✅ Fusee.bin → bootloader/payloads/Fusee.bin")
+        print(f"✅ fusee.bin → bootloader/payloads/fusee.bin")
         
         print("🔗 Integriere SysDVR...")
         sysdvr_root = None
