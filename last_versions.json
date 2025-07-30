@@ -1,8 +1,8 @@
 {
-  "cfw_version": "1.9.2",
+  "cfw_version": "1.9.3",
   "bootloader_version": "v6.3.1",
   "sysdvr_version": "v6.2.1",
-  "ldn_mitm_version": "v20.2.0",
+  "ldn_mitm_version": "v20.3.0",
   "sys_botbase_version": "v2.4",
   "ftpd_version": "v3.2.1",
   "jksv_version": "11/05/2024"
