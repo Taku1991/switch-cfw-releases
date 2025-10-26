@@ -208,11 +208,6 @@ override_any_app = u8!0x1
 [btm]
 ; Bluetooth Manager - Standard-Einstellungen
 fatal_auto_reboot_interval = u64!0x0
-
-[dmnt]
-; Deaktiviere Debug Monitor komplett
-dmnt_always_save_cheat_toggles = u8!0x0
-dmnt_cheats_enabled_by_default = u8!0x0
 """
     
     with open(system_settings_ini, 'w', encoding='utf-8') as f:
@@ -224,34 +219,38 @@ dmnt_cheats_enabled_by_default = u8!0x0
     if override_config.exists():
         print("🗑️ Entferne override_config.ini (kann problematische Einstellungen enthalten)")
         override_config.unlink()
-    
-    # 4. Erstelle spezifische Konfiguration für dmnt-Deaktivierung
-    dmnt_config = config_dir / "dmnt.ini"
-    dmnt_safe_config = """[dmnt]
-; Komplett deaktivierte Cheat-Engine
-cheats_enabled_by_default = u8!0x0
-always_save_cheat_toggles = u8!0x0
-"""
-    
-    with open(dmnt_config, 'w', encoding='utf-8') as f:
-        f.write(dmnt_safe_config)
-    print("✅ dmnt.ini mit Cheat-Deaktivierung erstellt")
-    
-    # 5. Erstelle leeren exefs_patches Ordner falls nicht vorhanden (verhindert Fehler)
+
+    # 4. Erstelle leeren exefs_patches Ordner falls nicht vorhanden (verhindert Fehler)
     exefs_patches_dir = atmosphere_dir / "exefs_patches"
     exefs_patches_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Erstelle leeren kip_patches Ordner falls nicht vorhanden
     kip_patches_dir = atmosphere_dir / "kip_patches"
     kip_patches_dir.mkdir(parents=True, exist_ok=True)
-    
-    # 6. Entferne alle .cht Dateien aus dem gesamten atmosphere-Ordner
+
+    # 5. Entferne alle .cht Dateien aus dem gesamten atmosphere-Ordner
     print("🔍 Suche nach .cht Cheat-Dateien...")
     for cht_file in atmosphere_dir.rglob("*.cht"):
         print(f"🗑️ Entferne Cheat-Datei: {cht_file.relative_to(combined_dir)}")
         cht_file.unlink()
-    
-    print("✅ Atmosphere-Konfiguration bereinigt - dmnt und Cheats deaktiviert")
+
+    print("✅ Atmosphere-Konfiguration bereinigt - Cheats vollständig deaktiviert")
+
+def add_sysdvr_config(combined_dir):
+    """Fügt optimierte SysDVR-Konfiguration für Pokemon SysBot hinzu"""
+    print("🎥 Konfiguriere SysDVR für Pokemon SysBot...")
+
+    # Erstelle config/sysdvr Verzeichnis (auf SD-Karte Root-Ebene)
+    sysdvr_config_dir = combined_dir / "config" / "sysdvr"
+    sysdvr_config_dir.mkdir(parents=True, exist_ok=True)
+
+    # Erstelle tcp Konfigurationsdatei für USB-Streaming (optimal für Pokemon Bot)
+    # Inhalt "a" = Audio + Video über TCP/USB
+    tcp_config = sysdvr_config_dir / "tcp"
+    with open(tcp_config, 'w', encoding='utf-8') as f:
+        f.write('a')
+    print("✅ SysDVR TCP-Modus konfiguriert (Audio+Video über USB)")
+    print("   Andere Modi (RTSP/USB) sind automatisch deaktiviert")
 
 def find_component_structure(base_path, component_name):
     """Findet die korrekte Struktur für verschiedene CFW-Komponenten"""
@@ -422,7 +421,10 @@ def main():
 
         # Bereinige Atmosphere-Konfiguration
         clean_atmosphere_config(combined_dir)
-        
+
+        # Konfiguriere SysDVR für Pokemon SysBot
+        add_sysdvr_config(combined_dir)
+
         # Erstelle finales ZIP
         cfw_version = os.environ.get('CFW_VERSION', 'unknown')
         bootloader_version = os.environ.get('BOOTLOADER_VERSION', 'unknown')
