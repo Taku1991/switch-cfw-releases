@@ -183,6 +183,10 @@ def clean_atmosphere_config(combined_dir):
 ; Deaktiviere Cheats standardmäßig
 enable_cheats = u8!0x0
 
+; WICHTIG: Deaktiviere dmnt (Debug Monitor für Cheats)
+dmnt_cheats_enabled_by_default = u8!0x0
+dmnt_always_save_cheat_toggles = u8!0x0
+
 [eupld]
 ; Upload-Crash-Reports deaktivieren für bessere Stabilität
 upload_enabled = u8!0x0
@@ -204,11 +208,16 @@ override_any_app = u8!0x1
 [btm]
 ; Bluetooth Manager - Standard-Einstellungen
 fatal_auto_reboot_interval = u64!0x0
+
+[dmnt]
+; Deaktiviere Debug Monitor komplett
+dmnt_always_save_cheat_toggles = u8!0x0
+dmnt_cheats_enabled_by_default = u8!0x0
 """
     
     with open(system_settings_ini, 'w', encoding='utf-8') as f:
         f.write(safe_config)
-    print("✅ system_settings.ini mit sicherer Konfiguration erstellt")
+    print("✅ system_settings.ini mit dmnt-Deaktivierung erstellt")
     
     # 3. Entferne override_config.ini falls vorhanden (kann Cheat-Settings enthalten)
     override_config = config_dir / "override_config.ini"
@@ -216,7 +225,19 @@ fatal_auto_reboot_interval = u64!0x0
         print("🗑️ Entferne override_config.ini (kann problematische Einstellungen enthalten)")
         override_config.unlink()
     
-    # 4. Erstelle leeren exefs_patches Ordner falls nicht vorhanden (verhindert Fehler)
+    # 4. Erstelle spezifische Konfiguration für dmnt-Deaktivierung
+    dmnt_config = config_dir / "dmnt.ini"
+    dmnt_safe_config = """[dmnt]
+; Komplett deaktivierte Cheat-Engine
+cheats_enabled_by_default = u8!0x0
+always_save_cheat_toggles = u8!0x0
+"""
+    
+    with open(dmnt_config, 'w', encoding='utf-8') as f:
+        f.write(dmnt_safe_config)
+    print("✅ dmnt.ini mit Cheat-Deaktivierung erstellt")
+    
+    # 5. Erstelle leeren exefs_patches Ordner falls nicht vorhanden (verhindert Fehler)
     exefs_patches_dir = atmosphere_dir / "exefs_patches"
     exefs_patches_dir.mkdir(parents=True, exist_ok=True)
     
@@ -224,7 +245,13 @@ fatal_auto_reboot_interval = u64!0x0
     kip_patches_dir = atmosphere_dir / "kip_patches"
     kip_patches_dir.mkdir(parents=True, exist_ok=True)
     
-    print("✅ Atmosphere-Konfiguration bereinigt - Cheats deaktiviert")
+    # 6. Entferne alle .cht Dateien aus dem gesamten atmosphere-Ordner
+    print("🔍 Suche nach .cht Cheat-Dateien...")
+    for cht_file in atmosphere_dir.rglob("*.cht"):
+        print(f"🗑️ Entferne Cheat-Datei: {cht_file.relative_to(combined_dir)}")
+        cht_file.unlink()
+    
+    print("✅ Atmosphere-Konfiguration bereinigt - dmnt und Cheats deaktiviert")
 
 def find_component_structure(base_path, component_name):
     """Findet die korrekte Struktur für verschiedene CFW-Komponenten"""
