@@ -83,7 +83,7 @@ def main():
             'asset_pattern': 'ldn_mitm'
         },
         'sys_botbase': {
-            'name': 'bdawg1989/sys-botbase',
+            'name': 'olliz0r/sys-botbase',
             'asset_pattern': '.zip'
         },
         'ftpd': {

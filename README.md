@@ -8,7 +8,7 @@ Ein automatisches Release-System, das die neuesten Versionen aller Komponenten f
 ## 📦 Paketinhalt
 
 ### Enthaltene Dateien:
-- **SysBot Base** - Kernsystem für Bots auf Nintendo Switch ([Quelle](https://github.com/bdawg1989/sys-botbase))
+- **SysBot Base** - Kernsystem für Bots auf Nintendo Switch ([Quelle](https://github.com/olliz0r/sys-botbase))
 - **Atmosphère** - Custom Firmware für Nintendo Switch ([Quelle](https://github.com/Atmosphere-NX/Atmosphere))
 - **JKSV** - Spielstand-Manager ([Quelle](https://github.com/J-D-K/JKSV))
 - **ldn_mitm** - Erforderlich für Online-Funktionen und SysBot ([Quelle](https://github.com/Lusamine/ldn_mitm))
@@ -241,7 +241,7 @@ Diese Einrichtung ist nur für den persönlichen Gebrauch bestimmt. Bitte respek
 |---------|--------|-----------|------------|
 | **Atmosphère** | GPLv2 | SciresM, TuxSH, hexkyz, fincs | [Atmosphere-NX/Atmosphere](https://github.com/Atmosphere-NX/Atmosphere) |
 | **Hekate** | GPLv2 | CTCaer | [CTCaer/hekate](https://github.com/CTCaer/hekate) |
-| **sys-botbase** | MIT | bdawg1989 | [bdawg1989/sys-botbase](https://github.com/bdawg1989/sys-botbase) |
+| **sys-botbase** | MIT | olliz0r | [olliz0r/sys-botbase](https://github.com/olliz0r/sys-botbase) |
 | **ldn_mitm** | GPLv2 | Lusamine | [Lusamine/ldn_mitm](https://github.com/Lusamine/ldn_mitm) |
 | **JKSV** | GPLv3 | J-D-K | [J-D-K/JKSV](https://github.com/J-D-K/JKSV) |
 | **ftpd** | GPLv3 | mtheall | [mtheall/ftpd](https://github.com/mtheall/ftpd) |
@@ -299,7 +299,7 @@ SOFTWARE.
 Besonderer Dank an:
 - **SciresM, TuxSH, hexkyz, fincs** für Atmosphère
 - **CTCaer** für Hekate  
-- **bdawg1989** für sys-botbase
+- **olliz0r** für sys-botbase
 - **Lusamine** für ldn_mitm
 - **J-D-K** für JKSV
 - **mtheall** für ftpd

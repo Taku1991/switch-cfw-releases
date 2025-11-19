@@ -73,7 +73,7 @@ def get_asset_urls():
     bootloader_url = get_download_url('CTCaer/hekate', 'hekate_ctcaer')
     sysdvr_url = get_download_url('exelix11/SysDVR', 'sysdvr.zip')
     ldn_mitm_url = get_download_url('Lusamine/ldn_mitm', 'ldn_mitm')
-    sys_botbase_url = get_download_url('bdawg1989/sys-botbase', '.zip')
+    sys_botbase_url = get_download_url('olliz0r/sys-botbase', '.zip')
     ftpd_url = get_download_url('mtheall/ftpd', 'ftpd.nro')
     jksv_url = get_download_url('J-D-K/JKSV', 'JKSV.nro')
     
