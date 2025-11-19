@@ -72,7 +72,7 @@ def main():
         },
         'bootloader': {
             'name': 'CTCaer/hekate',
-            'asset_pattern': 'hekate_ctcaer'
+            'asset_pattern': 'nyx'
         },
         'sysdvr': {
             'name': 'exelix11/SysDVR',

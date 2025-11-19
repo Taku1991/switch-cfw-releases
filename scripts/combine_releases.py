@@ -70,7 +70,7 @@ def get_asset_urls():
     # GitHub API URLs für Assets
     cfw_url = get_download_url('Atmosphere-NX/Atmosphere', 'atmosphere')
     fusee_url = get_download_url('Atmosphere-NX/Atmosphere', 'fusee.bin')
-    bootloader_url = get_download_url('CTCaer/hekate', 'hekate_ctcaer')
+    bootloader_url = get_download_url('CTCaer/hekate', 'nyx')
     sysdvr_url = get_download_url('exelix11/SysDVR', 'sysdvr.zip')
     ldn_mitm_url = get_download_url('Lusamine/ldn_mitm', 'ldn_mitm')
     sys_botbase_url = get_download_url('olliz0r/sys-botbase', '.zip')
