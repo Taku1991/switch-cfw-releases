@@ -1,7 +1,7 @@
 {
   "cfw_version": "1.10.2",
   "bootloader_version": "v6.5.1",
-  "sysdvr_version": "v6.2.2",
+  "sysdvr_version": "v6.3",
   "ldn_mitm_version": "v21.2.0",
   "sys_botbase_version": "v2.41",
   "ftpd_version": "v3.2.1",
